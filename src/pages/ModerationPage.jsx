@@ -10,10 +10,25 @@ export default function ModerationPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedImage(null);
+      }
+    };
+    if (selectedImage) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage]);
+
 
   // Reject modal state
   const [rejectItem, setRejectItem] = useState(null);
@@ -191,7 +206,10 @@ export default function ModerationPage() {
                           Yuklangan Skrinshot:
                         </span>
                         <div
-                          onClick={() => setSelectedImage(getImageUrl(sub.screenshot_url))}
+                          onClick={() => {
+                            setSelectedImage(getImageUrl(sub.screenshot_url));
+                            setZoomLevel(1);
+                          }}
                           className="relative h-44 rounded-xl overflow-hidden cursor-pointer group border border-white/10 bg-surface-container-lowest"
                         >
                           <img
@@ -260,21 +278,113 @@ export default function ModerationPage() {
         </div>
       )}
 
-      {/* Fullscreen Image Lightbox Modal */}
+      {/* Fullscreen Responsive Image Lightbox Modal */}
       {selectedImage && (
         <div
-          onClick={() => setSelectedImage(null)}
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out"
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col justify-between overflow-hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedImage(null);
+            }
+          }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/20">
-            <img src={getImageUrl(selectedImage)} alt="Full preview" className="w-full h-full object-contain" />
-            <button
-              type="button"
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/80 text-white flex items-center justify-center"
+          {/* Top Control Bar */}
+          <div className="w-full px-3 py-2.5 sm:px-6 sm:py-3 bg-black/70 backdrop-blur-lg border-b border-white/10 flex items-center justify-between gap-2 z-10 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="material-symbols-outlined text-secondary text-[20px] shrink-0">image</span>
+              <span className="text-white text-xs font-headline font-semibold truncate hidden sm:inline">
+                Skrinshot Isboti
+              </span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Zoom Out */}
+              <button
+                type="button"
+                onClick={() => setZoomLevel((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
+                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-white text-xs flex items-center gap-1 border border-white/10 active:scale-95 transition-all"
+                title="Kichiklashtirish"
+              >
+                <span className="material-symbols-outlined text-[18px]">zoom_out</span>
+              </button>
+
+              {/* Zoom Reset */}
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1)}
+                className="px-2 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-mono font-bold border border-white/10 min-w-[50px] text-center active:scale-95 transition-all"
+                title="Asl 100% holatga qaytarish"
+              >
+                {Math.round(zoomLevel * 100)}%
+              </button>
+
+              {/* Zoom In */}
+              <button
+                type="button"
+                onClick={() => setZoomLevel((prev) => Math.min(3, Number((prev + 0.25).toFixed(2))))}
+                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-white text-xs flex items-center gap-1 border border-white/10 active:scale-95 transition-all"
+                title="Kattalashtirish"
+              >
+                <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+              </button>
+
+              {/* Open in New Tab */}
+              <a
+                href={getImageUrl(selectedImage)}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-tertiary text-xs font-semibold flex items-center gap-1 border border-white/10 active:scale-95 transition-all"
+                title="Yangi oynada to'liq ochish"
+              >
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                <span className="hidden sm:inline">Asl havola</span>
+              </a>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setSelectedImage(null)}
+                className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-error-container/90 hover:bg-error-container text-white text-xs font-bold flex items-center gap-1 shadow-neon-red ml-1 active:scale-95 transition-all"
+                title="Yopish (Esc)"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+                <span className="hidden sm:inline">Yopish</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main Image Viewport with Pan & Scroll Support */}
+          <div
+            className="flex-1 w-full h-full overflow-auto flex items-center justify-center p-2 sm:p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setSelectedImage(null);
+              }
+            }}
+          >
+            <div
+              className="transition-transform duration-150 ease-out flex items-center justify-center"
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'center center',
+              }}
             >
-              <span className="material-symbols-outlined text-2xl">close</span>
-            </button>
+              <img
+                src={getImageUrl(selectedImage)}
+                alt="Skrinshot Isboti"
+                className="max-h-[82vh] max-w-[96vw] sm:max-w-[90vw] w-auto h-auto object-contain rounded-xl shadow-2xl border border-white/20 select-none cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomLevel((prev) => (prev === 1 ? 1.5 : 1));
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Bottom Caption */}
+          <div className="w-full py-2 bg-black/60 text-center text-[11px] text-on-surface-variant font-mono border-t border-white/5 shrink-0">
+            Kattalashtirish uchun rasm ustiga bosing yoki tepada zoom/asl havola tugmalaridan foydalaning.
           </div>
         </div>
       )}
