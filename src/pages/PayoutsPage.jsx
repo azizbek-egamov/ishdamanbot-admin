@@ -500,8 +500,8 @@ export default function PayoutsPage() {
                             </span>
                             <span className="text-[10px] text-slate-400">
                               {refundBalance
-                                ? 'Foydalanuvchi hisobiga 100 000 UZS qaytariladi (standart holat).'
-                                : '⚠️ DIQQAT: Mablag\' balansga QAYTARILMAYDI (qoidabuzarlik uchun musodara qilinadi).'}
+                                ? `Foydalanuvchi hisobiga ${formatUZS(selectedPayout.amount)} UZS qaytariladi (standart holat).`
+                                : `⚠️ DIQQAT: Mablag' (${formatUZS(selectedPayout.amount)} UZS) balansga QAYTARILMAYDI (qoidabuzarlik uchun musodara qilinadi).`}
                             </span>
                           </div>
                         </label>
