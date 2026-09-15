@@ -66,9 +66,11 @@ export function AdminAuthProvider({ children }) {
     } else if (import.meta.env.VITE_WS_URL) {
       const base = import.meta.env.VITE_WS_URL.replace(/\/+$/, '');
       wsUrl = `${base}/ws/admin/`;
+    } else if (import.meta.env.VITE_BACKEND_URL) {
+      const base = import.meta.env.VITE_BACKEND_URL.replace(/^http/, 'ws').replace(/\/+$/, '');
+      wsUrl = `${base}/ws/admin/`;
     } else {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsUrl = `${proto}//${window.location.host}/ws/admin/`;
+      wsUrl = `wss://core.ishdaman.uz/ws/admin/`;
     }
 
     const ws = new WebSocket(wsUrl);
