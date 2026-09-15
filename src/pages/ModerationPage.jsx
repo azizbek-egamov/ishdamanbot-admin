@@ -192,7 +192,9 @@ export default function ModerationPage() {
                     {sub.proof_data && (
                       <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-white/5 flex flex-col gap-1">
                         <span className="text-[10px] text-on-surface-variant font-mono">
-                          User kiritgan ID / Matn:
+                          {sub.task_verification_type === 'manual_username' || (sub.proof_data && sub.proof_data.startsWith('@'))
+                            ? "Foydalanuvchi Username'i:"
+                            : "User kiritgan ID / Matn:"}
                         </span>
                         <span className="text-xs font-mono font-bold text-tertiary select-all">
                           {sub.proof_data}

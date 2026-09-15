@@ -254,8 +254,20 @@ export default function TasksBuilderPage() {
 
                 <div className="p-2 rounded-lg bg-surface-container-lowest/80 border border-white/5 flex flex-col gap-1 text-[10px] text-on-surface-variant font-mono">
                   <div className="flex items-center justify-between">
-                    <span>Tekshiruv: <b className="text-white">{task.verification_type}</b></span>
-                    {task.timer_seconds > 0 && <span>Taymer: {task.timer_seconds}s</span>}
+                    <span>
+                      Tekshiruv:{' '}
+                      <b className="text-white">
+                        {task.verification_type === 'auto_api' && 'auto_api (Bot)'}
+                        {task.verification_type === 'timer' && `timer (${task.timer_seconds}s)`}
+                        {task.verification_type === 'manual_screenshot' && 'manual_screenshot'}
+                        {task.verification_type === 'manual_id' && 'manual_id'}
+                        {task.verification_type === 'manual_username' && 'manual_username (@)'}
+                        {!['auto_api', 'timer', 'manual_screenshot', 'manual_id', 'manual_username'].includes(task.verification_type) && task.verification_type}
+                      </b>
+                    </span>
+                    {task.timer_seconds > 0 && task.verification_type !== 'timer' && (
+                      <span>Taymer: {task.timer_seconds}s</span>
+                    )}
                   </div>
                   {task.url && (
                     <a
@@ -402,6 +414,7 @@ export default function TasksBuilderPage() {
                     <option value="timer">Yarim-avtomat (Taymer)</option>
                     <option value="manual_screenshot">Qo'lda (Skrinshot tekshirish)</option>
                     <option value="manual_id">Qo'lda (Broker/Prop ID)</option>
+                    <option value="manual_username">Qo'lda (Username tekshirish)</option>
                   </select>
                 </div>
 
