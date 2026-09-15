@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import api from '../services/api';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 // Web Audio API Sound Generator for 0-latency physical clicks
 class SoundFX {
@@ -70,6 +71,7 @@ class SoundFX {
 const sfx = new SoundFX();
 
 export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved }) {
+  useBodyScrollLock(true);
   const [loadingPool, setLoadingPool] = useState(true);
   const [participants, setParticipants] = useState([]);
   const [selectedRank, setSelectedRank] = useState(1);
@@ -414,34 +416,34 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
   const assignedWinnerForCurrentTier = drawnWinners[selectedRank];
 
   return (
-    <div className="fixed inset-0 z-[12000] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[12000] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fade-in">
       {/* Container - Studio Aspect Ratio (Perfect for Instagram Reels & Screen Recording) */}
-      <div className="relative w-full max-w-4xl bg-gradient-to-b from-[#0e111a] via-[#121624] to-[#0a0c13] rounded-3xl border border-amber-500/30 shadow-[0_0_80px_rgba(251,191,36,0.15)] flex flex-col overflow-hidden my-auto animate-modal-pop">
+      <div className="relative w-full max-w-4xl max-h-[95vh] bg-gradient-to-b from-[#0e111a] via-[#121624] to-[#0a0c13] rounded-3xl border border-amber-500/30 shadow-[0_0_80px_rgba(251,191,36,0.15)] flex flex-col overflow-hidden my-auto animate-modal-pop">
         
         {/* Studio Lighting Accents */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-36 bg-amber-400/20 blur-3xl pointer-events-none rounded-full"></div>
         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
 
         {/* Top Control Bar */}
-        <div className="relative z-10 px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+        <div className="relative z-10 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-bold shadow-lg shadow-amber-500/30">
-              <span className="material-symbols-outlined text-2xl">casino</span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-bold shadow-lg shadow-amber-500/30">
+              <span className="material-symbols-outlined text-xl sm:text-2xl">casino</span>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-red-400">
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-red-400">
                   STUDIO MODE // JONLI EFIRGA OLISH REJIMI
                 </span>
               </div>
-              <h3 className="font-headline font-bold text-white text-base tracking-tight">
+              <h3 className="font-headline font-bold text-white text-sm sm:text-base tracking-tight truncate max-w-[200px] sm:max-w-md">
                 {contest.title} — Randomizer
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Audio Toggle */}
             <button
               type="button"
@@ -472,7 +474,7 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
         </div>
 
         {/* Main Stage */}
-        <div className="relative p-6 flex flex-col gap-5 items-center text-center">
+        <div className="relative p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 items-center text-center overflow-y-auto flex-1">
           
           {/* Prize Rank Selector Tabs */}
           <div className="w-full max-w-2xl flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-black/50 border border-white/10 overflow-x-auto">
@@ -737,7 +739,7 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
         </div>
 
         {/* Footer Actions */}
-        <div className="relative z-10 px-6 py-4 border-t border-white/10 bg-black/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative z-10 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-white/10 bg-black/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <span className="text-xs text-on-surface-variant text-center sm:text-left">
             Tasdiqlangach, g'oliblar balansi avtomatik to'ldiriladi va ularga <b>Telegram Bot</b> orqali tabriknoma yuboriladi.
           </span>

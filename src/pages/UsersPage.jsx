@@ -5,6 +5,7 @@ import AmountInput from '../components/AmountInput';
 import Pagination from '../components/Pagination';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function UsersPage() {
   const { showToast } = useAdminAuth();
@@ -18,6 +19,7 @@ export default function UsersPage() {
 
   // Balance edit modal
   const [balanceModalUser, setBalanceModalUser] = useState(null);
+  useBodyScrollLock(!!balanceModalUser);
   const [actionType, setActionType] = useState('deposit');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -248,13 +250,22 @@ export default function UsersPage() {
 
       {/* Modify Balance Modal */}
       {balanceModalUser && (
-        <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-surface-container rounded-2xl border border-white/10 p-6 flex flex-col gap-4 shadow-2xl animate-modal-pop">
-            <h3 className="font-headline font-bold text-white text-base">
-              Balansni Tahrirlash // {balanceModalUser.full_name}
-            </h3>
+        <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="w-full max-w-md max-h-[92vh] bg-surface-container rounded-2xl border border-white/10 flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/5 shrink-0 bg-surface-container-lowest/60">
+              <h3 className="font-headline font-bold text-white text-base">
+                Balansni Tahrirlash // {balanceModalUser.full_name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setBalanceModalUser(null)}
+                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveBalance} className="flex flex-col gap-3">
+            <form id="balance-form" onSubmit={handleSaveBalance} className="p-4 sm:p-5 flex flex-col gap-3.5 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -301,24 +312,25 @@ export default function UsersPage() {
                   className="px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-primary-container"
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setBalanceModalUser(null)}
-                  className="px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant text-xs"
-                >
-                  Bekor
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-primary-container text-white font-bold text-xs shadow-neon-red"
-                >
-                  {saving ? 'Saqlanmoqda...' : 'Tasdiqlash'}
-                </button>
-              </div>
             </form>
+
+            <div className="p-4 sm:p-5 border-t border-white/5 shrink-0 flex items-center justify-end gap-2 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => setBalanceModalUser(null)}
+                className="px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant text-xs hover:text-white"
+              >
+                Bekor
+              </button>
+              <button
+                type="submit"
+                form="balance-form"
+                disabled={saving}
+                className="px-5 py-2 rounded-xl bg-primary-container text-white font-bold text-xs shadow-neon-red"
+              >
+                {saving ? 'Saqlanmoqda...' : 'Tasdiqlash'}
+              </button>
+            </div>
           </div>
         </div>
       )}

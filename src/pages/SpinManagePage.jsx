@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import AmountInput from '../components/AmountInput';
 import { formatUZS } from '../utils/formatters';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 // ─── Color presets for quick selection ──────────────────────────────────────
 const COLOR_PRESETS = [
@@ -314,6 +315,7 @@ function SpinWheelPreview({ rewards }) {
 
 // ─── Reward Form Modal ───────────────────────────────────────────────────────
 function RewardModal({ reward, onClose, onSave }) {
+  useBodyScrollLock(true);
   const isEdit = !!reward?.id;
   const [form, setForm] = useState({
     label: reward?.label || '',
@@ -348,10 +350,10 @@ function RewardModal({ reward, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-surface-container-low border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 overflow-hidden animate-fade-in">
+      <div className="bg-surface-container-low border border-white/10 rounded-2xl w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-modal-pop">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0 bg-surface-container-lowest/60">
           <h3 className="font-headline font-bold text-white text-base">
             {isEdit ? '✏️ Sovrinni tahrirlash' : '➕ Yangi sovrin qo\'shish'}
           </h3>
@@ -360,7 +362,7 @@ function RewardModal({ reward, onClose, onSave }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+        <form id="reward-form" onSubmit={handleSubmit} className="p-5 flex flex-col gap-4 overflow-y-auto flex-1">
           {error && (
             <div className="px-3 py-2 bg-error-container/30 border border-error/40 rounded-lg text-error text-xs">{error}</div>
           )}
@@ -467,17 +469,17 @@ function RewardModal({ reward, onClose, onSave }) {
               ))}
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-white text-sm font-semibold transition-colors">
-              Bekor
-            </button>
-            <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-primary-container text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-neon-red">
-              {saving ? 'Saqlanmoqda...' : isEdit ? 'Yangilash' : 'Qo\'shish'}
-            </button>
-          </div>
         </form>
+
+        {/* Actions */}
+        <div className="flex gap-3 p-4 sm:p-5 border-t border-white/5 shrink-0 bg-surface-container-lowest/80">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-white text-sm font-semibold transition-colors">
+            Bekor
+          </button>
+          <button type="submit" form="reward-form" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary-container text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-neon-red">
+            {saving ? 'Saqlanmoqda...' : isEdit ? 'Yangilash' : 'Qo\'shish'}
+          </button>
+        </div>
       </div>
     </div>
   );

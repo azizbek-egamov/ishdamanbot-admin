@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function AdsManagePage() {
   const { showToast } = useAdminAuth();
@@ -11,6 +12,7 @@ export default function AdsManagePage() {
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
+  useBodyScrollLock(showModal);
   const [editingAd, setEditingAd] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -320,9 +322,9 @@ export default function AdsManagePage() {
 
       {/* Modal: Create or Edit Ad */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="glass-card rounded-2xl p-6 border border-white/10 w-full max-w-lg flex flex-col gap-4 shadow-2xl my-8 animate-modal-pop">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="glass-card rounded-2xl border border-white/10 w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl my-auto animate-modal-pop overflow-hidden">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 shrink-0 bg-surface-container-lowest/60">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-amber-400 text-xl">
                   {editingAd ? 'edit' : 'campaign'}
@@ -337,13 +339,13 @@ export default function AdsManagePage() {
                   setShowModal(false);
                   setEditingAd(null);
                 }}
-                className="text-on-surface-variant hover:text-white"
+                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveAd} className="flex flex-col gap-3.5">
+            <form id="ad-manage-form" onSubmit={handleSaveAd} className="p-4 sm:p-5 flex flex-col gap-3.5 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-on-surface-variant font-mono">Hamkor Nomi:</label>
@@ -477,32 +479,33 @@ export default function AdsManagePage() {
                   Ushbu bannerni darhol faollashtirish (Ilovada ko'rinadi)
                 </label>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingAd(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-amber-400 text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-amber-300 transition-all disabled:opacity-50"
-                >
-                  {saving ? (
-                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <span className="material-symbols-outlined text-base">check</span>
-                  )}
-                  <span>{editingAd ? "Saqlash" : "Yaratish"}</span>
-                </button>
-              </div>
             </form>
+
+            <div className="flex items-center justify-end gap-2 p-4 sm:p-5 border-t border-white/10 shrink-0 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingAd(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="ad-manage-form"
+                disabled={saving}
+                className="px-5 py-2.5 rounded-xl bg-amber-400 text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-amber-300 transition-all disabled:opacity-50"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <span className="material-symbols-outlined text-base">check</span>
+                )}
+                <span>{editingAd ? "Saqlash" : "Yaratish"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

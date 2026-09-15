@@ -6,6 +6,7 @@ import Pagination from '../components/Pagination';
 import AdminRandomizerModal from '../components/AdminRandomizerModal';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function ContestsManagePage() {
   const { showToast } = useAdminAuth();
@@ -16,6 +17,9 @@ export default function ContestsManagePage() {
   const [randomizerContest, setRandomizerContest] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'leaderboard'
+
+  // Lock background scroll when modal is active
+  useBodyScrollLock(showCreateModal || !!editingContest || !!randomizerContest);
 
   // Form Data for Create / Edit
   const defaultPrizesConfig = [
@@ -783,9 +787,10 @@ export default function ContestsManagePage() {
 
       {/* Create / Edit Contest Modal with FULL Admin Control */}
       {(showCreateModal || editingContest) && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="glass-card rounded-2xl p-6 border border-white/10 w-full max-w-xl flex flex-col gap-5 shadow-2xl my-8 animate-modal-pop">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="glass-card rounded-2xl border border-white/10 w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 shrink-0 bg-surface-container-lowest/60">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-xl">
                   {editingContest ? 'edit' : 'add_circle'}
@@ -800,13 +805,14 @@ export default function ContestsManagePage() {
                   setShowCreateModal(false);
                   setEditingContest(null);
                 }}
-                className="text-on-surface-variant hover:text-white"
+                className="text-on-surface-variant hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
+            {/* Scrollable Form Body */}
+            <form id="contest-manage-form" onSubmit={handleSave} className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-4">
               {/* Contest Title */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-on-surface-variant font-mono">Musobaqa Nomi:</label>
@@ -1106,32 +1112,34 @@ export default function ContestsManagePage() {
                   Ushbu konkursni darhol faollashtirish (Faol qilinsa, avvalgi boshqa konkurslar avtomatik to'xtatiladi)
                 </label>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingContest(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-secondary-container text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-secondary transition-all disabled:opacity-50 active:scale-95"
-                >
-                  {saving ? (
-                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <span className="material-symbols-outlined text-base">check</span>
-                  )}
-                  <span>{editingContest ? "Saqlash" : "Yaratish"}</span>
-                </button>
-              </div>
             </form>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-white/10 shrink-0 flex items-center justify-end gap-2 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingContest(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="contest-manage-form"
+                disabled={saving}
+                className="px-5 py-2 rounded-xl bg-secondary-container text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-secondary transition-all disabled:opacity-50 active:scale-95"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <span className="material-symbols-outlined text-base">check</span>
+                )}
+                <span>{editingContest ? "Saqlash" : "Yaratish"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

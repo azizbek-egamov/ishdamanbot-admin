@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { formatUZS } from '../utils/formatters';
 import { getImageUrl } from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function ShopManagePage() {
   const { showToast } = useAdminAuth();
@@ -44,6 +45,9 @@ export default function ShopManagePage() {
   // Gallery Manager Modal
   const [galleryProduct, setGalleryProduct] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Lock body scroll when any modal is open
+  useBodyScrollLock(!!selectedOrder || !!previewReceiptZoom || !!productModal || !!galleryProduct);
 
   // ===================== SETTINGS STATE =====================
   const [settingsForm, setSettingsForm] = useState({
@@ -984,10 +988,10 @@ export default function ShopManagePage() {
       {/* ORDER INSPECTOR MODAL */}
       {/* ==================================================================== */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col gap-5 p-6 shadow-2xl animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/5 shrink-0 bg-surface-container-lowest/60">
               <div className="flex items-center gap-2.5">
                 <span className="font-mono font-bold text-lg text-white">
                   Buyurtma #{selectedOrder.order_number}
@@ -1009,159 +1013,254 @@ export default function ShopManagePage() {
               </button>
             </div>
 
-            {/* Content 2-Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Left column: Details */}
-              <div className="flex flex-col gap-3">
-                <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
-                  <span className="font-mono uppercase text-slate-400 font-bold">Xaridor:</span>
-                  <span className="font-semibold text-white text-sm">
-                    {selectedOrder.user_details?.full_name || 'Noma\'lum'}
-                  </span>
-                  <span className="font-mono text-slate-300">
-                    Aloqa: <strong className="text-primary-fixed-dim">{selectedOrder.contact_info}</strong>
-                  </span>
-                  {selectedOrder.user_details?.telegram_id && (
-                    <span className="font-mono text-slate-400 text-[11px]">
-                      Telegram ID: {selectedOrder.user_details.telegram_id}
+            {/* Scrollable Content 2-Columns */}
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Left column: Details */}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
+                    <span className="font-mono uppercase text-slate-400 font-bold">Xaridor:</span>
+                    <span className="font-semibold text-white text-sm">
+                      {selectedOrder.user_details?.full_name || 'Noma\'lum'}
                     </span>
+                    <span className="font-mono text-slate-300">
+                      Aloqa: <strong className="text-primary-fixed-dim">{selectedOrder.contact_info}</strong>
+                    </span>
+                    {selectedOrder.user_details?.telegram_id && (
+                      <span className="font-mono text-slate-400 text-[11px]">
+                        Telegram ID: {selectedOrder.user_details.telegram_id}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
+                    <span className="font-mono uppercase text-slate-400 font-bold">Mahsulot:</span>
+                    <span className="font-semibold text-white text-sm">
+                      {selectedOrder.product_title}
+                    </span>
+                    <div className="flex flex-wrap gap-2 text-[11px] font-mono text-slate-300">
+                      <span>Soni: <strong className="text-white">{selectedOrder.quantity} ta</strong></span>
+                      {selectedOrder.selected_size && <span>O'lcham: <strong>{selectedOrder.selected_size}</strong></span>}
+                      {selectedOrder.selected_color && <span>Rang: <strong>{selectedOrder.selected_color}</strong></span>}
+                    </div>
+                  </div>
+
+                  {/* Delivery address if physical */}
+                  {selectedOrder.shipping_address && (
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-1 text-xs">
+                      <span className="font-mono uppercase text-slate-400 font-bold">Yetkazish Manzili:</span>
+                      <p className="text-slate-200">{selectedOrder.shipping_address}</p>
+                    </div>
+                  )}
+
+                  {/* Pricing Breakdown */}
+                  <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-1 text-xs font-mono">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Mahsulot narxi:</span>
+                      <span>{formatUZS(selectedOrder.total_price)} UZS</span>
+                    </div>
+                    <div className="flex justify-between text-white font-bold text-sm pt-1 border-t border-white/5">
+                      <span>Jami To'lov:</span>
+                      <span className="text-primary-fixed-dim">{formatUZS(selectedOrder.total_price)} UZS</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right column: Receipt and status */}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
+                    <span className="font-mono uppercase text-slate-400 font-bold">Holat:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase ${
+                        selectedOrder.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        selectedOrder.status === 'delivered' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                        selectedOrder.status === 'rejected' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                        'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {selectedOrder.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Receipt Image */}
+                  <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
+                    <span className="font-mono uppercase text-slate-400 font-bold">To'lov Cheki:</span>
+                    {selectedOrder.receipt_url || selectedOrder.payment_receipt ? (
+                      <div className="relative group cursor-pointer overflow-hidden rounded-xl border border-white/10">
+                        <img
+                          src={getImageUrl(selectedOrder.receipt_url || selectedOrder.payment_receipt)}
+                          alt="To'lov Cheki"
+                          className="w-full max-h-48 object-contain bg-black/50"
+                          onClick={() => setPreviewReceiptZoom(true)}
+                        />
+                        <div
+                          onClick={() => setPreviewReceiptZoom(true)}
+                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity gap-1"
+                        >
+                          <span className="material-symbols-outlined text-sm">zoom_in</span>
+                          Kattalashtirish
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic">Chek yuklanmagan</span>
+                    )}
+                  </div>
+
+                  {/* Delivered Content if already approved */}
+                  {selectedOrder.delivery_data && (
+                    <div className="bg-black/30 border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col gap-1 text-xs">
+                      <span className="font-mono uppercase text-emerald-400 font-bold">Yuborilgan Material / Kod:</span>
+                      <pre className="text-[11px] text-slate-200 whitespace-pre-wrap font-mono bg-black/40 p-2 rounded-lg">
+                        {selectedOrder.delivery_data}
+                      </pre>
+                    </div>
+                  )}
+
+                  {selectedOrder.admin_note && (
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-1 text-xs">
+                      <span className="font-mono uppercase text-slate-400 font-bold">Admin Izohi:</span>
+                      <p className="text-slate-300 italic">{selectedOrder.admin_note}</p>
+                    </div>
                   )}
                 </div>
-
-                <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-2 text-xs">
-                  <span className="font-mono uppercase text-slate-400 font-bold">Mahsulot:</span>
-                  <span className="font-semibold text-white text-sm">
-                    {selectedOrder.product_title}
-                  </span>
-                  <div className="flex flex-wrap gap-2 text-[11px] font-mono text-slate-300">
-                    <span>Soni: <strong className="text-white">{selectedOrder.quantity} ta</strong></span>
-                    {selectedOrder.selected_size && <span>O'lcham: <strong>{selectedOrder.selected_size}</strong></span>}
-                    {selectedOrder.selected_color && <span>Rang: <strong>{selectedOrder.selected_color}</strong></span>}
-                  </div>
-                  <div className="border-t border-white/5 pt-2 flex justify-between items-center text-sm font-headline">
-                    <span className="text-slate-400">Jami To'lov:</span>
-                    <span className="font-extrabold text-primary-container">
-                      {formatUZS(selectedOrder.total_amount)} UZS
-                    </span>
-                  </div>
-                </div>
-
-                {/* Delivery address if physical */}
-                {selectedOrder.delivery_address && (
-                  <div className="bg-cyan-950/30 border border-cyan-500/20 rounded-2xl p-3.5 text-xs text-cyan-200">
-                    <span className="font-bold text-cyan-400 block mb-1">🚚 Yetkazib berish manzili:</span>
-                    <span>{selectedOrder.delivery_address}</span>
-                  </div>
-                )}
-
-                {/* User Note */}
-                {selectedOrder.user_note && (
-                  <div className="bg-white/5 rounded-2xl p-3 text-xs text-slate-300 italic">
-                    <span className="font-semibold not-italic text-slate-400">Mijoz izohi: </span>
-                    "{selectedOrder.user_note}"
-                  </div>
-                )}
               </div>
 
-              {/* Right column: PAYMENT RECEIPT IMAGE (CHEK) */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-mono font-bold uppercase text-slate-300 flex items-center justify-between">
-                  <span>To'lov Cheki Skrinshoti:</span>
-                  {selectedOrder.receipt_url && (
-                    <a
-                      href={getImageUrl(selectedOrder.receipt_url || selectedOrder.payment_receipt)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-fixed-dim hover:underline text-[11px] font-semibold"
-                    >
-                      Kattalashtirish ↗
-                    </a>
-                  )}
-                </span>
-
-                <div className="w-full aspect-[4/5] rounded-2xl bg-black/60 border border-white/10 overflow-hidden relative flex items-center justify-center">
-                  {selectedOrder.receipt_url ? (
-                    <img
-                      src={getImageUrl(selectedOrder.receipt_url || selectedOrder.payment_receipt)}
-                      alt="To'lov cheki"
-                      className="w-full h-full object-contain cursor-pointer"
-                      onClick={() => setPreviewReceiptZoom(true)}
-                    />
+              {/* Action Modals inline */}
+              {actionModal === 'approve' && (
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                  <span className="font-headline font-bold text-sm text-emerald-400">
+                    Buyurtmani Tasdiqlash va Foydalanuvchiga Yetkazish
+                  </span>
+                  {selectedOrder.product_type === 'digital' ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-slate-300">
+                        Raqamli material (Havola, Kurs linki, Yopiq guruh ssilkasi yoki Promokod) *:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={deliveryDataInput}
+                        onChange={(e) => setDeliveryDataInput(e.target.value)}
+                        placeholder="Masalan: https://t.me/+join_private_channel yoki PROMO-2024"
+                        className="w-full bg-[#12141f] border border-emerald-500/40 rounded-xl p-3 text-xs text-white focus:outline-none"
+                      />
+                    </div>
                   ) : (
-                    <span className="text-xs text-slate-500 font-mono">Chek rasmi topilmadi</span>
+                    <p className="text-xs text-slate-300">
+                      Jismoniy mahsulot uchun to'lov tasdiqlanadi. Keyinchalik kuryer jo'natilgach "Yetkazildi" holatiga o'tkazasiz.
+                    </p>
                   )}
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-300">Admin Izohi (ixtiyoriy):</label>
+                    <input
+                      type="text"
+                      value={adminNoteInput}
+                      onChange={(e) => setAdminNoteInput(e.target.value)}
+                      placeholder="Masalan: To'lov to'liq qabul qilindi"
+                      className="w-full bg-[#12141f] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActionModal(null)}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => handleUpdateOrderStatus('approved', deliveryDataInput, adminNoteInput)}
+                      className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-wider"
+                    >
+                      {actionLoading ? 'Yuborilmoqda...' : 'Tasdiqlash & Botdan Xabar Jo\'natish'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
 
-            {/* ACTION SECTION */}
-            {actionModal ? (
-              <div className="bg-black/50 border border-white/10 rounded-2xl p-4 flex flex-col gap-3">
-                <h4 className="font-headline font-bold text-xs uppercase tracking-wider text-white">
-                  {actionModal === 'approve'
-                    ? "Buyurtmani Tasdiqlash & Material/Havola Yuborish"
-                    : actionModal === 'deliver'
-                    ? "Yetkazildi holatiga o'tkazish"
-                    : "Buyurtmani Rad Etish"}
-                </h4>
+              {actionModal === 'reject' && (
+                <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                  <span className="font-headline font-bold text-sm text-red-400">
+                    Buyurtmani Rad Etish
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-300">Rad etish sababi (Foydalanuvchiga ko'rsatiladi) *:</label>
+                    <textarea
+                      rows={3}
+                      value={adminNoteInput}
+                      onChange={(e) => setAdminNoteInput(e.target.value)}
+                      placeholder="Masalan: Chek tasdiqlanmadi yoki pul tushmagan..."
+                      className="w-full bg-[#12141f] border border-red-500/40 rounded-xl p-3 text-xs text-white focus:outline-none"
+                    />
+                  </div>
 
-                {actionModal !== 'reject' ? (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Material Havolasi yoki Trek-kod (Google Drive / Telegram VIP / Pochta kodi)
-                    </label>
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActionModal(null)}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => handleUpdateOrderStatus('rejected', '', adminNoteInput)}
+                      className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider"
+                    >
+                      {actionLoading ? 'Saqlanmoqda...' : 'Rad etishni tasdiqlash'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {actionModal === 'deliver' && (
+                <div className="bg-cyan-950/40 border border-cyan-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                  <span className="font-headline font-bold text-sm text-cyan-400">
+                    Yetkazildi (Delivered) holatiga o'tkazish
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-300">Kuryer / Trek raqami (ixtiyoriy):</label>
                     <input
                       type="text"
                       value={deliveryDataInput}
                       onChange={(e) => setDeliveryDataInput(e.target.value)}
-                      placeholder="https://t.me/... yoki https://drive.google.com/..."
-                      className="w-full bg-[#161826] border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-primary-container"
+                      placeholder="Trek raqami yoki Kuryer ma'lumoti"
+                      className="w-full bg-[#12141f] border border-cyan-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                     />
                   </div>
-                ) : null}
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    {actionModal === 'reject' ? "Rad etish sababi (Mijozga Telegram orqali yuboriladi)" : "Admin izohi / Ko'rsatma"}
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={adminNoteInput}
-                    onChange={(e) => setAdminNoteInput(e.target.value)}
-                    placeholder={actionModal === 'reject' ? "Chek soxta yoki mablag' hisobga kelib tushmadi..." : "Xaridingiz uchun rahmat! Savollaringiz bo'lsa adminga yozing..."}
-                    className="w-full bg-[#161826] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container resize-none"
-                  />
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActionModal(null)}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => handleUpdateOrderStatus('delivered', deliveryDataInput, adminNoteInput)}
+                      className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs uppercase tracking-wider"
+                    >
+                      {actionLoading ? 'Saqlanmoqda...' : 'Yetkazildi deb belgilash'}
+                    </button>
+                  </div>
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setActionModal(null)}
-                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 transition-colors"
-                  >
-                    Bekor qilish
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={handleOrderStatusSubmit}
-                    className={`px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wide transition-all shadow-lg active:scale-95 ${
-                      actionModal === 'reject'
-                        ? 'bg-rose-500 hover:bg-rose-400 text-white'
-                        : 'bg-emerald-500 hover:bg-emerald-400 text-black'
-                    }`}
-                  >
-                    {actionLoading ? 'Yuborilmoqda...' : 'Tasdiqlash & Telegramdan Xabar Yuborish'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Action Buttons */
-              <div className="flex items-center justify-end gap-3 border-t border-white/5 pt-3">
+            {/* Bottom Actions Fixed */}
+            {!actionModal && (
+              <div className="p-4 sm:p-5 border-t border-white/5 shrink-0 flex items-center justify-between gap-3 bg-surface-container-lowest/80">
                 <button
                   type="button"
                   onClick={() => setActionModal('reject')}
-                  className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all"
+                  className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-bold transition-all"
                 >
                   Rad etish
                 </button>
@@ -1211,22 +1310,22 @@ export default function ShopManagePage() {
       {/* PRODUCT CREATE / EDIT MODAL */}
       {/* ==================================================================== */}
       {productModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 flex flex-col gap-4 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/5 shrink-0 bg-surface-container-lowest/60">
               <h3 className="font-headline font-bold text-base text-white">
                 {productModal === 'create' ? "Yangi Mahsulot Qo'shish" : "Mahsulotni Tahrirlash"}
               </h3>
               <button
                 type="button"
                 onClick={() => setProductModal(null)}
-                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="flex flex-col gap-3.5 text-xs">
+            <form id="product-manage-form" onSubmit={handleSaveProduct} className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-3.5 text-xs">
               <div className="flex flex-col gap-1">
                 <label className="font-semibold text-slate-300">Nomi *</label>
                 <input
@@ -1361,24 +1460,25 @@ export default function ShopManagePage() {
                   Mahsulot faol (Do'konda ko'rinsin)
                 </label>
               </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setProductModal(null)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold text-xs"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={productSaving}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-primary-container to-[#be0034] text-white font-bold text-xs uppercase tracking-wider shadow-neon-red active:scale-95 transition-all"
-                >
-                  {productSaving ? 'Saqlanmoqda...' : 'Saqlash'}
-                </button>
-              </div>
             </form>
+
+            <div className="p-4 sm:p-5 border-t border-white/5 shrink-0 flex items-center justify-end gap-3 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => setProductModal(null)}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold text-xs"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="product-manage-form"
+                disabled={productSaving}
+                className="px-6 py-2 rounded-xl bg-gradient-to-r from-primary-container to-[#be0034] text-white font-bold text-xs uppercase tracking-wider shadow-neon-red active:scale-95 transition-all"
+              >
+                {productSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1387,9 +1487,9 @@ export default function ShopManagePage() {
       {/* GALLERY IMAGES MANAGER MODAL */}
       {/* ==================================================================== */}
       {galleryProduct && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 flex flex-col gap-5 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="bg-[#12141f] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/5 shrink-0 bg-surface-container-lowest/60">
               <div>
                 <h3 className="font-headline font-bold text-base text-white">
                   Rasmlar Galereyasi
@@ -1401,29 +1501,30 @@ export default function ShopManagePage() {
               <button
                 type="button"
                 onClick={() => setGalleryProduct(null)}
-                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Current Images */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {galleryProduct.images?.map((img) => (
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 grid grid-cols-3 gap-3">
+              {galleryImages.map((img) => (
                 <div
                   key={img.id}
-                  className={`relative aspect-square rounded-2xl overflow-hidden border-2 bg-black/40 group ${
-                    img.is_primary ? 'border-primary-container shadow-neon-red' : 'border-white/10'
-                  }`}
+                  className={`relative group aspect-square rounded-2xl overflow-hidden border ${
+                    img.is_primary ? 'border-primary-container ring-2 ring-primary-container/40' : 'border-white/10'
+                  } bg-black/40`}
                 >
-                  <img src={getImageUrl(img.image)} alt="Gallery" className="w-full h-full object-cover" />
-
+                  <img
+                    src={getImageUrl(img.image_url || img.image)}
+                    alt="Gallery item"
+                    className="w-full h-full object-cover"
+                  />
                   {img.is_primary && (
-                    <span className="absolute top-2 left-2 bg-primary-container text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">
+                    <div className="absolute top-2 left-2 bg-primary-container text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow">
                       ASOSIY
-                    </span>
+                    </div>
                   )}
-
                   <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity p-2">
                     {!img.is_primary && (
                       <button

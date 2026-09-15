@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import AmountInput from '../components/AmountInput';
 import { formatUZS } from '../utils/formatters';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function TasksBuilderPage() {
   const { showToast } = useAdminAuth();
@@ -15,6 +16,9 @@ export default function TasksBuilderPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Lock background scroll when modal is active
+  useBodyScrollLock(showModal);
 
   const initialFormState = {
     title: '',
@@ -327,9 +331,10 @@ export default function TasksBuilderPage() {
 
       {/* Modal: Create or Edit Task */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="glass-card rounded-2xl p-6 border border-white/10 w-full max-w-lg flex flex-col gap-4 shadow-2xl my-8 animate-modal-pop">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="glass-card rounded-2xl border border-white/10 w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 shrink-0 bg-surface-container-lowest/60">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">
                   {editingTask ? 'edit_note' : 'add_task'}
@@ -344,13 +349,14 @@ export default function TasksBuilderPage() {
                   setShowModal(false);
                   setEditingTask(null);
                 }}
-                className="text-on-surface-variant hover:text-white"
+                className="text-on-surface-variant hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleSaveTask} className="flex flex-col gap-3.5">
+            {/* Scrollable Form Body */}
+            <form id="task-builder-form" onSubmit={handleSaveTask} className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-on-surface-variant font-mono">Vazifa Sarlavhasi:</label>
                 <input
@@ -465,32 +471,34 @@ export default function TasksBuilderPage() {
                   Ushbu vazifani faol holatga keltirish (Foydalanuvchilarga ko'rinsin)
                 </label>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingTask(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-primary-container text-white font-bold text-xs uppercase tracking-wider shadow-neon-red flex items-center gap-2 hover:bg-primary-container/90 transition-all disabled:opacity-50"
-                >
-                  {saving ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <span className="material-symbols-outlined text-base">check</span>
-                  )}
-                  <span>{editingTask ? "Saqlash" : "Yaratish"}</span>
-                </button>
-              </div>
             </form>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-white/10 shrink-0 flex items-center justify-end gap-2 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingTask(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="task-builder-form"
+                disabled={saving}
+                className="px-5 py-2 rounded-xl bg-primary-container text-white font-bold text-xs uppercase tracking-wider shadow-neon-red flex items-center gap-2 hover:bg-primary-container/90 transition-all disabled:opacity-50 active:scale-95"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <span className="material-symbols-outlined text-base">check</span>
+                )}
+                <span>{editingTask ? "Saqlash" : "Yaratish"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

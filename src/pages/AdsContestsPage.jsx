@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function AdsContestsPage() {
   const { showToast } = useAdminAuth();
@@ -12,6 +13,7 @@ export default function AdsContestsPage() {
 
   // New Ad form modal
   const [showAdModal, setShowAdModal] = useState(false);
+  useBodyScrollLock(showAdModal);
   const [newAd, setNewAd] = useState({
     partner_name: '',
     badge_text: 'Homiy',
@@ -202,22 +204,22 @@ export default function AdsContestsPage() {
 
       {/* New Ad Modal */}
       {showAdModal && (
-        <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-surface-container rounded-2xl border border-white/10 p-6 flex flex-col gap-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="w-full max-w-lg max-h-[92vh] bg-surface-container rounded-2xl border border-white/10 flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 shrink-0 bg-surface-container-lowest/60">
               <h3 className="font-headline font-bold text-white text-base">
                 Yangi Banner Joylashtirish
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAdModal(false)}
-                className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant"
+                className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-white transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleCreateAd} className="flex flex-col gap-3">
+            <form id="ad-create-form" onSubmit={handleCreateAd} className="p-4 sm:p-5 flex flex-col gap-3.5 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-on-surface-variant">Homiy / Broker Nomi:</label>
@@ -227,7 +229,7 @@ export default function AdsContestsPage() {
                     value={newAd.partner_name}
                     onChange={(e) => setNewAd({ ...newAd, partner_name: e.target.value })}
                     placeholder="Masalan: Exness Pro"
-                    className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none"
+                    className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-primary-container"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -237,7 +239,7 @@ export default function AdsContestsPage() {
                     value={newAd.badge_text}
                     onChange={(e) => setNewAd({ ...newAd, badge_text: e.target.value })}
                     placeholder="Masalan: Rasmiy Hamkor"
-                    className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none"
+                    className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-primary-container"
                   />
                 </div>
               </div>
@@ -250,7 +252,7 @@ export default function AdsContestsPage() {
                   value={newAd.title}
                   onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
                   placeholder="Banner sarlavhasi..."
-                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none"
+                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-primary-container"
                 />
               </div>
 
@@ -261,7 +263,7 @@ export default function AdsContestsPage() {
                   value={newAd.description}
                   onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
                   placeholder="Taklif haqida batafsil..."
-                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none resize-none"
+                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none resize-none focus:border-primary-container"
                 ></textarea>
               </div>
 
@@ -273,7 +275,7 @@ export default function AdsContestsPage() {
                   value={newAd.banner_image}
                   onChange={(e) => setNewAd({ ...newAd, banner_image: e.target.value })}
                   placeholder="https://images.unsplash.com/..."
-                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none font-mono"
+                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none font-mono focus:border-primary-container"
                 />
               </div>
 
@@ -285,19 +287,27 @@ export default function AdsContestsPage() {
                   value={newAd.target_url}
                   onChange={(e) => setNewAd({ ...newAd, target_url: e.target.value })}
                   placeholder="https://exness.com/..."
-                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none font-mono"
+                  className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none font-mono focus:border-primary-container"
                 />
               </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-primary-container text-white font-bold text-xs uppercase tracking-wider shadow-neon-red"
-                >
-                  Bannerni Saqlash
-                </button>
-              </div>
             </form>
+
+            <div className="p-4 sm:p-5 border-t border-white/10 shrink-0 flex items-center justify-end gap-2 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => setShowAdModal(false)}
+                className="px-4 py-2.5 rounded-xl bg-surface-container text-on-surface-variant text-xs hover:text-white"
+              >
+                Bekor
+              </button>
+              <button
+                type="submit"
+                form="ad-create-form"
+                className="px-6 py-2.5 rounded-xl bg-primary-container text-white font-bold text-xs uppercase tracking-wider shadow-neon-red"
+              >
+                Bannerni Saqlash
+              </button>
+            </div>
           </div>
         </div>
       )}

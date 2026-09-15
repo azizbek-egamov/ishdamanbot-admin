@@ -4,6 +4,7 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 import Pagination from '../components/Pagination';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 export default function ModerationPage() {
   const { showToast } = useAdminAuth();
@@ -15,6 +16,9 @@ export default function ModerationPage() {
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Lock background scroll when image lightbox or reject modal is active
+  useBodyScrollLock(!!selectedImage || !!rejectItem);
 
   // Close lightbox on Escape key
   useEffect(() => {
@@ -393,33 +397,46 @@ export default function ModerationPage() {
 
       {/* Reject Reason Modal */}
       {rejectItem && (
-        <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-surface-container rounded-2xl border border-white/10 p-6 flex flex-col gap-4 shadow-2xl">
-            <h3 className="font-headline font-bold text-white text-base">
-              Arizani Rad Etish
-            </h3>
-            <p className="text-xs text-on-surface-variant">
-              Foydalanuvchiga nima sababdan rad etilganini bildirish uchun sabab yozing:
-            </p>
-            <textarea
-              rows="3"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Masalan: Skrinshotda vazifa shartlari to'liq aks etmagan..."
-              className="w-full p-3 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-primary-container resize-none"
-            ></textarea>
-            <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+          <div className="glass-card rounded-2xl border border-white/10 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl animate-modal-pop overflow-hidden my-auto">
+            <div className="p-4 sm:p-5 border-b border-white/10 shrink-0 flex items-center justify-between bg-surface-container-lowest/60">
+              <h3 className="font-headline font-bold text-white text-base">
+                Arizani Rad Etish
+              </h3>
               <button
                 type="button"
                 onClick={() => setRejectItem(null)}
-                className="px-4 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-xs"
+                className="text-on-surface-variant hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-3.5">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Foydalanuvchiga nima sababdan rad etilganini bildirish uchun sabab yozing:
+              </p>
+              <textarea
+                rows="4"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Masalan: Skrinshotda vazifa shartlari to'liq aks etmagan yoki boshqa hisobdan yuborilgan..."
+                className="w-full p-3.5 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-xs outline-none focus:border-error-container resize-none"
+              ></textarea>
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-white/10 shrink-0 flex items-center justify-end gap-2 bg-surface-container-lowest/80">
+              <button
+                type="button"
+                onClick={() => setRejectItem(null)}
+                className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold transition-all"
               >
                 Bekor qilish
               </button>
               <button
                 type="button"
                 onClick={handleRejectSubmit}
-                className="px-4 py-2 rounded-xl bg-error-container text-white font-semibold text-xs shadow-neon-red"
+                className="px-5 py-2 rounded-xl bg-error-container text-white font-semibold text-xs shadow-neon-red hover:bg-error-container/90 active:scale-95 transition-all"
               >
                 Rad etishni tasdiqlash
               </button>
