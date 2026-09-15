@@ -18,6 +18,12 @@ export default function ContestsManagePage() {
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'leaderboard'
 
   // Form Data for Create / Edit
+  const defaultPrizesConfig = [
+    { rank: 1, title: "1-O'rin (Bosh Sovrin)", type: 'cash', item_name: '', item_icon: 'military_tech', estimated_value: 2500000, is_cash: true, cash_amount: 2500000 },
+    { rank: 2, title: "2-O'rin", type: 'cash', item_name: '', item_icon: 'workspace_premium', estimated_value: 1500000, is_cash: true, cash_amount: 1500000 },
+    { rank: 3, title: "3-O'rin", type: 'cash', item_name: '', item_icon: 'emoji_events', estimated_value: 1000000, is_cash: true, cash_amount: 1000000 },
+  ];
+
   const [formData, setFormData] = useState({
     title: 'Katta Sovrinli Konkurs',
     description: "Barcha shartlarni bajargan ishtirokchilar orasidan jonli Randomizer orqali g'oliblar aniqlanadi!",
@@ -29,6 +35,7 @@ export default function ContestsManagePage() {
     second_prize: 1500000,
     third_prize: 1000000,
     fourth_prize: 0,
+    prizes_config: defaultPrizesConfig,
     start_date: new Date().toISOString().slice(0, 16),
     end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
     is_active: true,
@@ -107,6 +114,11 @@ export default function ContestsManagePage() {
       second_prize: 1500000,
       third_prize: 1000000,
       fourth_prize: 0,
+      prizes_config: [
+        { rank: 1, title: "1-O'rin (Bosh Sovrin)", type: 'cash', item_name: '', item_icon: 'military_tech', estimated_value: 2500000, is_cash: true, cash_amount: 2500000 },
+        { rank: 2, title: "2-O'rin", type: 'cash', item_name: '', item_icon: 'workspace_premium', estimated_value: 1500000, is_cash: true, cash_amount: 1500000 },
+        { rank: 3, title: "3-O'rin", type: 'cash', item_name: '', item_icon: 'emoji_events', estimated_value: 1000000, is_cash: true, cash_amount: 1000000 },
+      ],
       start_date: new Date().toISOString().slice(0, 16),
       end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
       is_active: true,
@@ -116,6 +128,40 @@ export default function ContestsManagePage() {
 
   const handleOpenEdit = (c) => {
     setEditingContest(c);
+    
+    // Parse or build prizes_config from existing contest
+    let initialPrizes = [];
+    if (c.prizes_config && Array.isArray(c.prizes_config) && c.prizes_config.length > 0) {
+      initialPrizes = c.prizes_config.map((p, idx) => ({
+        rank: p.rank || idx + 1,
+        title: p.title || `${idx + 1}-O'rin`,
+        type: p.type || (p.is_cash === false ? 'item' : 'cash'),
+        item_name: p.item_name || '',
+        item_icon: p.item_icon || 'emoji_events',
+        estimated_value: Number(p.estimated_value || p.cash_amount || 0),
+        is_cash: p.is_cash !== false,
+        cash_amount: Number(p.cash_amount || p.estimated_value || 0)
+      }));
+    } else {
+      initialPrizes = [
+        { rank: 1, title: "1-O'rin (Bosh Sovrin)", type: 'cash', item_name: '', item_icon: 'military_tech', estimated_value: Number(c.first_prize || 0), is_cash: true, cash_amount: Number(c.first_prize || 0) },
+        { rank: 2, title: "2-O'rin", type: 'cash', item_name: '', item_icon: 'workspace_premium', estimated_value: Number(c.second_prize || 0), is_cash: true, cash_amount: Number(c.second_prize || 0) },
+        { rank: 3, title: "3-O'rin", type: 'cash', item_name: '', item_icon: 'emoji_events', estimated_value: Number(c.third_prize || 0), is_cash: true, cash_amount: Number(c.third_prize || 0) },
+      ];
+      if (Number(c.fourth_prize) > 0) {
+        initialPrizes.push({
+          rank: 4,
+          title: "4-O'rin",
+          type: 'cash',
+          item_name: '',
+          item_icon: 'stars',
+          estimated_value: Number(c.fourth_prize),
+          is_cash: true,
+          cash_amount: Number(c.fourth_prize)
+        });
+      }
+    }
+
     setFormData({
       title: c.title,
       description: c.description || '',
@@ -127,6 +173,7 @@ export default function ContestsManagePage() {
       second_prize: c.second_prize,
       third_prize: c.third_prize,
       fourth_prize: c.fourth_prize || 0,
+      prizes_config: initialPrizes,
       start_date: c.start_date ? new Date(c.start_date).toISOString().slice(0, 16) : '',
       end_date: c.end_date ? new Date(c.end_date).toISOString().slice(0, 16) : '',
       is_active: c.is_active,
@@ -137,12 +184,39 @@ export default function ContestsManagePage() {
     e.preventDefault();
     try {
       setSaving(true);
+
+      // Auto-compute legacy fields and total pool for backward compatibility
+      const config = formData.prizes_config || [];
+      let calculatedTotal = 0;
+      let firstVal = 0;
+      let secondVal = 0;
+      let thirdVal = 0;
+      let fourthVal = 0;
+
+      config.forEach((p) => {
+        const val = p.is_cash ? Number(p.cash_amount || 0) : Number(p.estimated_value || 0);
+        calculatedTotal += val;
+        if (p.rank === 1) firstVal = val;
+        else if (p.rank === 2) secondVal = val;
+        else if (p.rank === 3) thirdVal = val;
+        else if (p.rank === 4) fourthVal = val;
+      });
+
+      const payload = {
+        ...formData,
+        prize_pool: calculatedTotal > 0 ? calculatedTotal : formData.prize_pool,
+        first_prize: firstVal || formData.first_prize,
+        second_prize: secondVal || formData.second_prize,
+        third_prize: thirdVal || formData.third_prize,
+        fourth_prize: fourthVal || formData.fourth_prize,
+      };
+
       if (editingContest) {
-        await api.patch(`/contests/admin/contests/${editingContest.id}/`, formData);
+        await api.patch(`/contests/admin/contests/${editingContest.id}/`, payload);
         showToast('Konkurs muvaffaqiyatli tahrirlandi!');
         setEditingContest(null);
       } else {
-        const res = await api.post('/contests/admin/contests/', formData);
+        const res = await api.post('/contests/admin/contests/', payload);
         showToast('Yangi konkurs yaratildi!');
         setShowCreateModal(false);
         if (res.data?.id) setSelectedContestId(res.data.id);
@@ -424,10 +498,10 @@ export default function ContestsManagePage() {
                         </span>
                       </div>
 
-                      {/* Prize Fund Breakdown (2x2 or 4 cols) */}
+                      {/* Prize Fund Breakdown (Dynamic Prizes Showcase) */}
                       <div className="p-3 rounded-xl bg-surface-container-lowest border border-white/5 flex flex-col gap-2">
                         <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                          <span className="text-xs text-on-surface-variant font-mono">Jami Sovrin Fondi:</span>
+                          <span className="text-xs text-on-surface-variant font-mono">Jami Sovrin Jamg'armasi:</span>
                           <div className="flex items-center gap-2">
                             {c.winners && c.winners.length > 0 && (
                               <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-400 text-[10px] font-bold">
@@ -440,26 +514,67 @@ export default function ContestsManagePage() {
                           </div>
                         </div>
 
-                        <div className={`grid ${Number(c.fourth_prize) > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 text-center text-xs`}>
-                          <div className="flex flex-col">
-                            <span className="text-amber-400 font-bold">🥇 1-o'rin</span>
-                            <span className="font-mono text-white font-semibold">{formatUZS(c.first_prize)}</span>
+                        {c.prizes_config && Array.isArray(c.prizes_config) && c.prizes_config.length > 0 ? (
+                          <div className={`grid grid-cols-1 sm:grid-cols-${Math.min(c.prizes_config.length, 4)} gap-2 text-center text-xs`}>
+                            {c.prizes_config.map((pz, pIdx) => {
+                              const rankColors = [
+                                'text-amber-400',
+                                'text-slate-300',
+                                'text-amber-700',
+                                'text-teal-400',
+                                'text-purple-400',
+                              ];
+                              const colorClass = rankColors[pIdx % rankColors.length];
+                              const rankMedals = ['🥇', '🥈', '🥉', '🎖️', '🎁'];
+                              const medal = rankMedals[pIdx] || '🏆';
+
+                              return (
+                                <div key={pIdx} className="flex flex-col items-center p-1.5 rounded-lg bg-surface-container/60 border border-white/5">
+                                  <span className={`${colorClass} font-bold text-[11px] truncate w-full`}>
+                                    {medal} {pz.rank || pIdx + 1}-o'rin
+                                  </span>
+                                  {pz.is_cash !== false ? (
+                                    <span className="font-mono text-white font-semibold text-xs mt-0.5">
+                                      {formatUZS(pz.cash_amount || pz.estimated_value || 0)} UZS
+                                    </span>
+                                  ) : (
+                                    <div className="flex flex-col items-center mt-0.5">
+                                      <span className="font-semibold text-amber-300 text-xs truncate max-w-[120px]" title={pz.item_name}>
+                                        {pz.item_name || "Moddiy Sovg'a"}
+                                      </span>
+                                      {Number(pz.estimated_value) > 0 && (
+                                        <span className="text-[9px] font-mono text-on-surface-variant">
+                                          ~{formatUZS(pz.estimated_value)} UZS
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-slate-300 font-bold">🥈 2-o'rin</span>
-                            <span className="font-mono text-white font-semibold">{formatUZS(c.second_prize)}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-amber-700 font-bold">🥉 3-o'rin</span>
-                            <span className="font-mono text-white font-semibold">{formatUZS(c.third_prize)}</span>
-                          </div>
-                          {Number(c.fourth_prize) > 0 && (
+                        ) : (
+                          <div className={`grid ${Number(c.fourth_prize) > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 text-center text-xs`}>
                             <div className="flex flex-col">
-                              <span className="text-teal-400 font-bold">🎖️ 4-o'rin</span>
-                              <span className="font-mono text-white font-semibold">{formatUZS(c.fourth_prize)}</span>
+                              <span className="text-amber-400 font-bold">🥇 1-o'rin</span>
+                              <span className="font-mono text-white font-semibold">{formatUZS(c.first_prize)}</span>
                             </div>
-                          )}
-                        </div>
+                            <div className="flex flex-col">
+                              <span className="text-slate-300 font-bold">🥈 2-o'rin</span>
+                              <span className="font-mono text-white font-semibold">{formatUZS(c.second_prize)}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-amber-700 font-bold">🥉 3-o'rin</span>
+                              <span className="font-mono text-white font-semibold">{formatUZS(c.third_prize)}</span>
+                            </div>
+                            {Number(c.fourth_prize) > 0 && (
+                              <div className="flex flex-col">
+                                <span className="text-teal-400 font-bold">🎖️ 4-o'rin</span>
+                                <span className="font-mono text-white font-semibold">{formatUZS(c.fourth_prize)}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Dates & Participant stats */}
@@ -759,60 +874,197 @@ export default function ContestsManagePage() {
                 </div>
               </div>
 
-              {/* Prize Pool breakdown - 2x2 + optional 4th */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-surface-container-lowest border border-white/5">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-secondary font-mono font-bold">Jami Fond (UZS):</label>
-                  <AmountInput
-                    value={formData.prize_pool}
-                    onChange={(val) => setFormData({ ...formData, prize_pool: val })}
-                    placeholder="5 000 000"
-                    required
-                    className="px-2.5 py-2 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
-                  />
+              {/* Dynamic Prizes Configurator (Sovrinlar Boshqaruvi: Pul yoki Sovg'alar) */}
+              <div className="flex flex-col gap-3 p-4 rounded-xl bg-surface-container-lowest border border-white/5">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-amber-400 text-lg">emoji_events</span>
+                    <label className="text-xs text-white font-mono font-bold uppercase tracking-wider">
+                      Sovrinlar Konfiguratsiyasi (Pul & Sovg'alar)
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentPrizes = formData.prizes_config || [];
+                      const nextRank = currentPrizes.length + 1;
+                      setFormData({
+                        ...formData,
+                        prizes_config: [
+                          ...currentPrizes,
+                          {
+                            rank: nextRank,
+                            title: `${nextRank}-O'rin`,
+                            type: 'cash',
+                            item_name: '',
+                            item_icon: 'emoji_events',
+                            estimated_value: 500000,
+                            is_cash: true,
+                            cash_amount: 500000,
+                          }
+                        ]
+                      });
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-secondary/15 hover:bg-secondary/25 border border-secondary/30 text-secondary text-[11px] font-bold flex items-center gap-1 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">add</span>
+                    <span>+ O'rin qo'shish</span>
+                  </button>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-amber-400 font-mono font-bold">1-o'rin (UZS):</label>
-                  <AmountInput
-                    value={formData.first_prize}
-                    onChange={(val) => setFormData({ ...formData, first_prize: val })}
-                    placeholder="2 500 000"
-                    required
-                    className="px-2.5 py-2 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
-                  />
+                <div className="flex flex-col gap-3">
+                  {(formData.prizes_config || []).map((prize, idx) => {
+                    const rankMedals = ['🥇', '🥈', '🥉', '🎖️', '🎁'];
+                    const medal = rankMedals[idx] || '🏆';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-surface-container/60 border border-white/5 flex flex-col gap-2.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold flex items-center justify-center">
+                              {medal}
+                            </span>
+                            <input
+                              type="text"
+                              value={prize.title || `${idx + 1}-O'rin`}
+                              onChange={(e) => {
+                                const updated = [...(formData.prizes_config || [])];
+                                updated[idx].title = e.target.value;
+                                setFormData({ ...formData, prizes_config: updated });
+                              }}
+                              className="px-2 py-0.5 rounded bg-surface-container-high border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary w-44"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Cash vs Item Switch */}
+                            <div className="flex items-center rounded-lg bg-surface-container-high p-0.5 border border-white/5 text-[10px] font-mono">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...(formData.prizes_config || [])];
+                                  updated[idx].type = 'cash';
+                                  updated[idx].is_cash = true;
+                                  setFormData({ ...formData, prizes_config: updated });
+                                }}
+                                className={`px-2 py-1 rounded-md font-bold transition-all ${
+                                  prize.is_cash !== false
+                                    ? 'bg-secondary text-black shadow-sm'
+                                    : 'text-on-surface-variant hover:text-white'
+                                }`}
+                              >
+                                💰 Naqd Pul
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...(formData.prizes_config || [])];
+                                  updated[idx].type = 'item';
+                                  updated[idx].is_cash = false;
+                                  setFormData({ ...formData, prizes_config: updated });
+                                }}
+                                className={`px-2 py-1 rounded-md font-bold transition-all ${
+                                  prize.is_cash === false
+                                    ? 'bg-amber-400 text-black shadow-sm'
+                                    : 'text-on-surface-variant hover:text-white'
+                                }`}
+                              >
+                                🎁 Sovg'a / Buyum
+                              </button>
+                            </div>
+
+                            {formData.prizes_config.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = formData.prizes_config.filter((_, i) => i !== idx);
+                                  // Re-index ranks
+                                  const reindexed = updated.map((p, i) => ({ ...p, rank: i + 1 }));
+                                  setFormData({ ...formData, prizes_config: reindexed });
+                                }}
+                                className="p-1 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all"
+                                title="O'chirish"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">close</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Fields according to type */}
+                        {prize.is_cash !== false ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <label className="text-[11px] text-on-surface-variant font-mono shrink-0">
+                              Yutuq summasi (UZS):
+                            </label>
+                            <AmountInput
+                              value={prize.cash_amount || prize.estimated_value || 0}
+                              onChange={(val) => {
+                                const updated = [...(formData.prizes_config || [])];
+                                updated[idx].cash_amount = val;
+                                updated[idx].estimated_value = val;
+                                setFormData({ ...formData, prizes_config: updated });
+                              }}
+                              placeholder="2 500 000"
+                              required
+                              className="px-2.5 py-1.5 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary flex-1"
+                            />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-0.5">
+                              <label className="text-[10px] text-on-surface-variant font-mono">
+                                Sovg'a Nomi (masalan: iPhone 16 Pro, PlayStation 5):
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={prize.item_name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(formData.prizes_config || [])];
+                                  updated[idx].item_name = e.target.value;
+                                  setFormData({ ...formData, prizes_config: updated });
+                                }}
+                                placeholder="iPhone 16 Pro Max 256GB"
+                                className="px-2.5 py-1.5 rounded-lg bg-surface-container border border-white/10 text-white text-xs outline-none focus:border-secondary"
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-0.5">
+                              <label className="text-[10px] text-on-surface-variant font-mono">
+                                Taxminiy Qiymati (UZS, ixtiyoriy):
+                              </label>
+                              <AmountInput
+                                value={prize.estimated_value || 0}
+                                onChange={(val) => {
+                                  const updated = [...(formData.prizes_config || [])];
+                                  updated[idx].estimated_value = val;
+                                  setFormData({ ...formData, prizes_config: updated });
+                                }}
+                                placeholder="18 000 000"
+                                className="px-2.5 py-1.5 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-slate-300 font-mono font-bold">2-o'rin (UZS):</label>
-                  <AmountInput
-                    value={formData.second_prize}
-                    onChange={(val) => setFormData({ ...formData, second_prize: val })}
-                    placeholder="1 500 000"
-                    required
-                    className="px-2.5 py-2 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-amber-700 font-mono font-bold">3-o'rin (UZS):</label>
-                  <AmountInput
-                    value={formData.third_prize}
-                    onChange={(val) => setFormData({ ...formData, third_prize: val })}
-                    placeholder="1 000 000"
-                    required
-                    className="px-2.5 py-2 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
-                  />
-                </div>
-
-                <div className="col-span-2 flex flex-col gap-1 pt-1 border-t border-white/5">
-                  <label className="text-[10px] text-teal-400 font-mono font-bold">4-o'rin (UZS, ixtiyoriy):</label>
-                  <AmountInput
-                    value={formData.fourth_prize}
-                    onChange={(val) => setFormData({ ...formData, fourth_prize: val })}
-                    placeholder="0"
-                    className="px-2.5 py-2 rounded-lg bg-surface-container border border-white/10 text-white font-mono text-xs outline-none focus:border-secondary"
-                  />
+                {/* Real-time total calculated prize pool info */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs font-mono">
+                  <span className="text-on-surface-variant">Hisoblangan Jami Fond:</span>
+                  <span className="font-bold text-secondary text-sm">
+                    {formatUZS(
+                      (formData.prizes_config || []).reduce((sum, p) => {
+                        return sum + (p.is_cash !== false ? Number(p.cash_amount || 0) : Number(p.estimated_value || 0));
+                      }, 0)
+                    )} UZS
+                  </span>
                 </div>
               </div>
 

@@ -102,22 +102,57 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
     };
   }, []);
 
-  // Define prize tiers based on contest configuration
-  const prizeTiers = [
-    { rank: 1, title: "1-O'rin (Bosh Sovrin)", amount: contest.first_prize || 2500000, icon: 'military_tech', color: 'from-amber-400 to-amber-600', textGlow: 'text-amber-400' },
-    { rank: 2, title: "2-O'rin", amount: contest.second_prize || 1500000, icon: 'workspace_premium', color: 'from-slate-300 to-slate-400', textGlow: 'text-slate-300' },
-    { rank: 3, title: "3-O'rin", amount: contest.third_prize || 1000000, icon: 'emoji_events', color: 'from-amber-700 to-orange-800', textGlow: 'text-orange-400' },
-  ];
+  // Define prize tiers based on contest configuration (prizes_config or legacy first/second/third/fourth)
+  let prizeTiers = [];
+  if (contest?.prizes_config && Array.isArray(contest.prizes_config) && contest.prizes_config.length > 0) {
+    const tierColors = [
+      'from-amber-400 to-amber-600',
+      'from-slate-300 to-slate-400',
+      'from-amber-700 to-orange-800',
+      'from-emerald-400 to-teal-600',
+      'from-purple-400 to-indigo-600',
+      'from-rose-400 to-red-600',
+    ];
+    const textGlows = [
+      'text-amber-400',
+      'text-slate-300',
+      'text-orange-400',
+      'text-emerald-400',
+      'text-purple-400',
+      'text-rose-400',
+    ];
 
-  if (Number(contest.fourth_prize) > 0) {
-    prizeTiers.push({
-      rank: 4,
-      title: "4-O'rin",
-      amount: contest.fourth_prize,
-      icon: 'stars',
-      color: 'from-emerald-400 to-teal-600',
-      textGlow: 'text-emerald-400'
-    });
+    prizeTiers = contest.prizes_config.map((pz, idx) => ({
+      rank: pz.rank || idx + 1,
+      title: pz.title || `${idx + 1}-O'rin`,
+      amount: pz.is_cash !== false ? Number(pz.cash_amount || pz.estimated_value || 0) : Number(pz.estimated_value || 0),
+      is_cash: pz.is_cash !== false,
+      prize_type: pz.type || (pz.is_cash === false ? 'item' : 'cash'),
+      item_name: pz.item_name || '',
+      item_icon: pz.item_icon || (pz.is_cash === false ? 'redeem' : 'payments'),
+      color: tierColors[idx % tierColors.length],
+      textGlow: textGlows[idx % textGlows.length],
+    }));
+  } else {
+    prizeTiers = [
+      { rank: 1, title: "1-O'rin (Bosh Sovrin)", amount: contest.first_prize || 2500000, is_cash: true, prize_type: 'cash', item_name: '', item_icon: 'military_tech', color: 'from-amber-400 to-amber-600', textGlow: 'text-amber-400' },
+      { rank: 2, title: "2-O'rin", amount: contest.second_prize || 1500000, is_cash: true, prize_type: 'cash', item_name: '', item_icon: 'workspace_premium', color: 'from-slate-300 to-slate-400', textGlow: 'text-slate-300' },
+      { rank: 3, title: "3-O'rin", amount: contest.third_prize || 1000000, is_cash: true, prize_type: 'cash', item_name: '', item_icon: 'emoji_events', color: 'from-amber-700 to-orange-800', textGlow: 'text-orange-400' },
+    ];
+
+    if (Number(contest.fourth_prize) > 0) {
+      prizeTiers.push({
+        rank: 4,
+        title: "4-O'rin",
+        amount: contest.fourth_prize,
+        is_cash: true,
+        prize_type: 'cash',
+        item_name: '',
+        item_icon: 'stars',
+        color: 'from-emerald-400 to-teal-600',
+        textGlow: 'text-emerald-400'
+      });
+    }
   }
 
   // Load existing winners from contest if any
@@ -131,7 +166,10 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
           username: w.username,
           avatar_url: w.avatar_url,
           ticket_number: w.ticket_number,
-          prize_amount: w.prize_amount
+          prize_amount: w.prize_amount,
+          prize_title: w.prize_title || '',
+          prize_type: w.prize_type || 'cash',
+          is_cash: w.is_cash !== false,
         };
       });
       setDrawnWinners(initial);
@@ -308,6 +346,8 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
   const handleConfirmWinner = () => {
     if (!currentWinner) return;
     const tier = prizeTiers.find((t) => t.rank === selectedRank);
+    const prizeLabel = tier?.is_cash === false ? (tier?.item_name || tier?.title) : (tier?.title || `${selectedRank}-O'rin`);
+
     setDrawnWinners((prev) => ({
       ...prev,
       [selectedRank]: {
@@ -317,6 +357,9 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
         avatar_url: currentWinner.avatar_url,
         ticket_number: currentWinner.ticket_number,
         prize_amount: tier?.amount || 0,
+        prize_title: prizeLabel,
+        prize_type: tier?.prize_type || (tier?.is_cash === false ? 'item' : 'cash'),
+        is_cash: tier?.is_cash !== false,
       }
     }));
     setCurrentWinner(null);
@@ -334,7 +377,10 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
     const winnersList = Object.entries(drawnWinners).map(([rank, data]) => ({
       user_id: data.user_id,
       prize_rank: Number(rank),
-      prize_amount: data.prize_amount
+      prize_amount: data.prize_amount,
+      prize_title: data.prize_title || '',
+      prize_type: data.prize_type || 'cash',
+      is_cash: data.is_cash !== false,
     }));
 
     if (winnersList.length === 0) {
@@ -429,7 +475,7 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
         <div className="relative p-6 flex flex-col gap-5 items-center text-center">
           
           {/* Prize Rank Selector Tabs */}
-          <div className="w-full max-w-2xl flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-black/50 border border-white/10">
+          <div className="w-full max-w-2xl flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-black/50 border border-white/10 overflow-x-auto">
             {prizeTiers.map((tier) => {
               const isSelected = selectedRank === tier.rank;
               const hasWinner = !!drawnWinners[tier.rank];
@@ -444,7 +490,7 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
                     setCurrentWinner(null);
                     setWinningIndex(null);
                   }}
-                  className={`flex-1 py-2.5 px-3 rounded-xl font-headline text-xs font-bold uppercase tracking-wider transition-all flex flex-col items-center gap-0.5 relative ${
+                  className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl font-headline text-xs font-bold uppercase tracking-wider transition-all flex flex-col items-center gap-0.5 relative ${
                     isSelected
                       ? `bg-gradient-to-r ${tier.color} text-black shadow-lg scale-102`
                       : hasWinner
@@ -453,11 +499,13 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm">{tier.icon}</span>
+                    <span className="material-symbols-outlined text-sm">{tier.item_icon || 'emoji_events'}</span>
                     <span>{tier.rank}-O'rin</span>
                   </div>
-                  <span className={`text-[10px] font-mono ${isSelected ? 'text-black/80 font-semibold' : 'text-on-surface-variant'}`}>
-                    {formatUZS(tier.amount)} UZS
+                  <span className={`text-[10px] font-mono truncate max-w-[120px] ${isSelected ? 'text-black/90 font-bold' : 'text-on-surface-variant'}`}>
+                    {tier.is_cash !== false
+                      ? `${formatUZS(tier.amount)} UZS`
+                      : (tier.item_name || "Moddiy Sovg'a")}
                   </span>
                   {hasWinner && !isSelected && (
                     <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-emerald-500 text-black text-[9px] font-bold flex items-center justify-center">
@@ -474,12 +522,12 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
             <span className="font-mono text-xs text-on-surface-variant uppercase tracking-widest">
               O'ynalayotgan Sovrin:
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <span className={`font-headline text-2xl sm:text-3xl font-bold uppercase tracking-tight ${currentTier.textGlow}`}>
                 {currentTier.title}
               </span>
               <span className="text-xl font-mono text-white font-semibold">
-                — {formatUZS(currentTier.amount)} UZS
+                — {currentTier.is_cash !== false ? `${formatUZS(currentTier.amount)} UZS` : `🎁 ${currentTier.item_name || "Moddiy Sovg'a"}`}
               </span>
             </div>
           </div>
@@ -667,14 +715,14 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
                           {winner ? winner.full_name : "Kutilmoqda..."}
                         </span>
                         <span className="text-[10px] font-mono text-on-surface-variant">
-                          {winner ? `${winner.ticket_number} • @${winner.username || 'user'}` : `${formatUZS(tier.amount)} UZS`}
+                          {winner ? `${winner.ticket_number} • @${winner.username || 'user'}` : (tier.is_cash !== false ? `${formatUZS(tier.amount)} UZS` : tier.item_name)}
                         </span>
                       </div>
                     </div>
 
                     {winner ? (
                       <span className="font-mono text-xs font-bold text-amber-400">
-                        {formatUZS(tier.amount)} UZS
+                        {tier.is_cash !== false ? `${formatUZS(tier.amount)} UZS` : `🎁 ${tier.item_name || winner.prize_title || "Sovg'a"}`}
                       </span>
                     ) : (
                       <span className="text-[10px] font-mono text-on-surface-variant uppercase">
