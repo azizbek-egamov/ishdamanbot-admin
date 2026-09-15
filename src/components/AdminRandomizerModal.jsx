@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import api from '../services/api';
 import { formatUZS } from '../utils/formatters';
+import getImageUrl from '../utils/imageUrl';
 
 // Web Audio API Sound Generator for 0-latency physical clicks
 class SoundFX {
@@ -550,13 +551,17 @@ export default function AdminRandomizerModal({ contest, onClose, onWinnersSaved 
 
                       {/* Avatar */}
                       <img
-                        src={item.avatar_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150'}
+                        src={item.avatar_url ? getImageUrl(item.avatar_url) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150'}
                         alt={item.full_name}
                         className={`w-14 h-14 rounded-full object-cover border-2 transition-all ${
                           isFinalCard
                             ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.8)]'
                             : 'border-white/20'
                         }`}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150';
+                        }}
                       />
 
                       {/* Name & Username */}

@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import Pagination from '../components/Pagination';
 import { formatUZS } from '../utils/formatters';
+import getImageUrl from '../utils/imageUrl';
 
 export default function ModerationPage() {
   const { showToast } = useAdminAuth();
@@ -142,9 +143,13 @@ export default function ModerationPage() {
                   <div className="p-4 border-b border-white/5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img
-                        src={sub.user_avatar || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
+                        src={sub.user_avatar ? getImageUrl(sub.user_avatar) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
                         alt={sub.user_name}
                         className="w-10 h-10 rounded-full object-cover border border-white/10 shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100';
+                        }}
                       />
                       <div className="flex flex-col min-w-0">
                         <span className="font-headline font-semibold text-white text-xs truncate">
@@ -186,13 +191,17 @@ export default function ModerationPage() {
                           Yuklangan Skrinshot:
                         </span>
                         <div
-                          onClick={() => setSelectedImage(sub.screenshot_url)}
-                          className="relative h-44 rounded-xl overflow-hidden cursor-pointer group border border-white/10"
+                          onClick={() => setSelectedImage(getImageUrl(sub.screenshot_url))}
+                          className="relative h-44 rounded-xl overflow-hidden cursor-pointer group border border-white/10 bg-surface-container-lowest"
                         >
                           <img
-                            src={sub.screenshot_url}
+                            src={getImageUrl(sub.screenshot_url)}
                             alt="Screenshot Proof"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600';
+                            }}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity gap-1 backdrop-blur-xs">
                             <span className="material-symbols-outlined text-[18px]">zoom_in</span>
@@ -201,6 +210,7 @@ export default function ModerationPage() {
                         </div>
                       </div>
                     )}
+
 
                     <span className="text-[10px] text-on-surface-variant font-mono mt-1">
                       Yuborildi: {new Date(sub.submitted_at).toLocaleString()}
@@ -257,7 +267,7 @@ export default function ModerationPage() {
           className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out"
         >
           <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/20">
-            <img src={selectedImage} alt="Full preview" className="w-full h-full object-contain" />
+            <img src={getImageUrl(selectedImage)} alt="Full preview" className="w-full h-full object-contain" />
             <button
               type="button"
               onClick={() => setSelectedImage(null)}

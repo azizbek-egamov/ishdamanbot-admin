@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import getImageUrl from '../utils/imageUrl';
 
 export default function AdsManagePage() {
   const { showToast } = useAdminAuth();
@@ -202,7 +203,7 @@ export default function AdsManagePage() {
               <div className="relative h-36 bg-surface-container-lowest overflow-hidden border-b border-white/5">
                 {ad.banner_image ? (
                   <img
-                    src={ad.banner_image}
+                    src={getImageUrl(ad.banner_image)}
                     alt={ad.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -406,7 +407,7 @@ export default function AdsManagePage() {
               {formData.banner_image && (
                 <div className="h-24 rounded-xl overflow-hidden border border-white/10 bg-black/40">
                   <img
-                    src={formData.banner_image}
+                    src={getImageUrl(formData.banner_image)}
                     alt="Preview"
                     className="w-full h-full object-cover"
                     onError={(e) => {

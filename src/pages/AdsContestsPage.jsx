@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { formatUZS } from '../utils/formatters';
+import getImageUrl from '../utils/imageUrl';
 
 export default function AdsContestsPage() {
   const { showToast } = useAdminAuth();
@@ -160,7 +161,15 @@ export default function AdsContestsPage() {
               >
                 <div>
                   <div className="relative h-36 w-full">
-                    <img src={ad.banner_image} alt={ad.partner_name} className="w-full h-full object-cover" />
+                    <img
+                      src={getImageUrl(ad.banner_image)}
+                      alt={ad.partner_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600';
+                      }}
+                    />
                     <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-primary-container text-white font-mono text-[10px] font-bold">
                       {ad.position}
                     </span>

@@ -5,6 +5,7 @@ import AmountInput from '../components/AmountInput';
 import Pagination from '../components/Pagination';
 import AdminRandomizerModal from '../components/AdminRandomizerModal';
 import { formatUZS } from '../utils/formatters';
+import getImageUrl from '../utils/imageUrl';
 
 export default function ContestsManagePage() {
   const { showToast } = useAdminAuth();
@@ -613,9 +614,13 @@ export default function ContestsManagePage() {
                     {/* User */}
                     <div className="col-span-5 flex items-center gap-2.5 min-w-0">
                       <img
-                        src={p.avatar_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
+                        src={p.avatar_url ? getImageUrl(p.avatar_url) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
                         alt={p.full_name}
                         className="w-7 h-7 rounded-full object-cover border border-white/10 shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100';
+                        }}
                       />
                       <div className="flex flex-col min-w-0">
                         <span className="font-headline font-semibold text-white truncate">

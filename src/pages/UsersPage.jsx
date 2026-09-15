@@ -4,6 +4,7 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 import AmountInput from '../components/AmountInput';
 import Pagination from '../components/Pagination';
 import { formatUZS } from '../utils/formatters';
+import getImageUrl from '../utils/imageUrl';
 
 export default function UsersPage() {
   const { showToast } = useAdminAuth();
@@ -167,9 +168,13 @@ export default function UsersPage() {
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2.5">
                         <img
-                          src={u.avatar_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80'}
+                          src={u.avatar_url ? getImageUrl(u.avatar_url) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80'}
                           alt={u.full_name}
                           className="w-8 h-8 rounded-full object-cover border border-white/10"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80';
+                          }}
                         />
                         <div className="flex flex-col">
                           <span className="font-semibold text-white">{u.full_name}</span>
