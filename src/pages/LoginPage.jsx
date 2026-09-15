@@ -3,8 +3,8 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 
 export default function LoginPage() {
   const { login } = useAdminAuth();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -13,7 +13,7 @@ export default function LoginPage() {
     setError('');
     try {
       setLoading(true);
-      await login(username, password);
+      await login(username.trim(), password);
     } catch (err) {
       const msg = err.response?.data?.error || 'Kirishda xatolik yuz berdi. Login yoki parol noto\'g\'ri.';
       setError(msg);
@@ -56,7 +56,8 @@ export default function LoginPage() {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
+              placeholder="Admin login kiriting..."
+              autoComplete="username"
               className="px-4 py-3 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-sm font-mono outline-none focus:border-primary-container transition-colors"
             />
           </div>
@@ -69,6 +70,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
               className="px-4 py-3 rounded-xl bg-surface-container-lowest border border-white/10 text-white text-sm font-mono outline-none focus:border-primary-container transition-colors"
             />
           </div>
@@ -85,12 +87,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* <div className="text-center">
-          <span className="text-[11px] text-on-surface-variant font-mono">
-            Standart login: <b>admin</b> | Parol: <b>admin123</b>
-          </span>
-        </div> */}
       </div>
     </div>
   );

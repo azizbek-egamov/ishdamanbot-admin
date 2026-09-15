@@ -137,24 +137,27 @@ export default function ShopManagePage() {
   }, [internalTab, orderStatusFilter]);
 
   // Handle Order Status Update (Approve / Deliver / Reject)
-  const handleOrderStatusSubmit = async () => {
-    if (!selectedOrder || !actionModal) return;
+  const handleUpdateOrderStatus = async (action, deliveryData = '', adminNote = '') => {
+    if (!selectedOrder) return;
+    const targetAction = action || actionModal;
+    if (!targetAction) return;
+
     setActionLoading(true);
 
     try {
       await api.post(`/shop/admin/orders/${selectedOrder.id}/status/`, {
-        action: actionModal,
-        delivery_data: deliveryDataInput,
-        admin_note: adminNoteInput
+        action: targetAction,
+        delivery_data: deliveryData || deliveryDataInput,
+        admin_note: adminNote || adminNoteInput
       });
 
       showToast?.(
-        actionModal === 'approve'
+        targetAction === 'approved' || targetAction === 'approve'
           ? "Buyurtma tasdiqlandi va Telegram orqali xabar yuborildi! ✅"
-          : actionModal === 'deliver'
+          : targetAction === 'delivered' || targetAction === 'deliver'
           ? "Buyurtma yetkazildi holatiga o'tkazildi! 🚚"
           : "Buyurtma rad etildi va mijozga sababi yuborildi. ❌",
-        actionModal === 'reject' ? "info" : "success"
+        targetAction === 'rejected' || targetAction === 'reject' ? "info" : "success"
       );
 
       setActionModal(null);
@@ -162,6 +165,7 @@ export default function ShopManagePage() {
       setDeliveryDataInput('');
       setAdminNoteInput('');
       fetchOrders();
+      fetchStats();
     } catch (err) {
       console.error(err);
       showToast?.(err.response?.data?.error || "Xatolik yuz berdi", "error");
@@ -1046,22 +1050,22 @@ export default function ShopManagePage() {
                   </div>
 
                   {/* Delivery address if physical */}
-                  {selectedOrder.shipping_address && (
+                  {(selectedOrder.delivery_address || selectedOrder.shipping_address) && (
                     <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-1 text-xs">
                       <span className="font-mono uppercase text-slate-400 font-bold">Yetkazish Manzili:</span>
-                      <p className="text-slate-200">{selectedOrder.shipping_address}</p>
+                      <p className="text-slate-200">{selectedOrder.delivery_address || selectedOrder.shipping_address}</p>
                     </div>
                   )}
 
                   {/* Pricing Breakdown */}
                   <div className="bg-black/30 border border-white/5 rounded-2xl p-3.5 flex flex-col gap-1 text-xs font-mono">
                     <div className="flex justify-between text-slate-400">
-                      <span>Mahsulot narxi:</span>
-                      <span>{formatUZS(selectedOrder.total_price)} UZS</span>
+                      <span>Dona narxi:</span>
+                      <span>{formatUZS(selectedOrder.unit_price || (selectedOrder.total_amount || selectedOrder.total_price))} UZS</span>
                     </div>
                     <div className="flex justify-between text-white font-bold text-sm pt-1 border-t border-white/5">
                       <span>Jami To'lov:</span>
-                      <span className="text-primary-fixed-dim">{formatUZS(selectedOrder.total_price)} UZS</span>
+                      <span className="text-primary-fixed-dim">{formatUZS(selectedOrder.total_amount || selectedOrder.total_price)} UZS</span>
                     </div>
                   </div>
                 </div>

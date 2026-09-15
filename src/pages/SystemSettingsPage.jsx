@@ -213,6 +213,131 @@ export default function SystemSettingsPage() {
           </div>
         </form>
       )}
+
+      {/* Section 3: Admin Security & Password Change */}
+      <AdminPasswordChangeSection showToast={showToast} />
     </div>
+  );
+}
+
+function AdminPasswordChangeSection({ showToast }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changing, setChanging] = useState(false);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      showToast('Yangi parol kamida 6 ta belgidan iborat bo\'lishi shart', 'error');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('Yangi parollar bir-biriga mos kelmadi!', 'error');
+      return;
+    }
+
+    try {
+      setChanging(true);
+      const res = await api.post('/users/auth/change-password/', {
+        current_password: currentPassword,
+        new_username: newUsername.trim() || undefined,
+        new_password: newPassword
+      });
+
+      if (res.data?.tokens?.access) {
+        localStorage.setItem('th_admin_token', res.data.tokens.access);
+      }
+
+      showToast(res.data?.message || 'Admin login va paroli muvaffaqiyatli yangilandi! 🛡️', 'success');
+      setCurrentPassword('');
+      setNewUsername('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Parolni yangilashda xatolik yuz berdi';
+      showToast(msg, 'error');
+    } finally {
+      setChanging(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handlePasswordChange} className="glass-card rounded-2xl p-6 border border-white/10 flex flex-col gap-5 shadow-2xl">
+      <div className="flex items-center gap-2.5 pb-2 border-b border-white/5">
+        <div className="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[20px]">lock_reset</span>
+        </div>
+        <div className="flex flex-col">
+          <h3 className="font-headline font-semibold text-white text-sm">
+            Administrator Xavfsizligi &amp; Parolni Yangilash
+          </h3>
+          <span className="text-[11px] text-on-surface-variant">
+            Boshqaruv paneliga kirish login va maxfiy parolini xavfsiz o'zgartirish
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-on-surface-variant font-mono">Joriy Parol:</label>
+          <input
+            type="password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Joriy parolingizni kiriting..."
+            className="px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-white/10 text-white font-mono text-xs outline-none focus:border-primary-container"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-on-surface-variant font-mono">Yangi Login (ixtiyoriy):</label>
+          <input
+            type="text"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            placeholder="O'zgartirmaslik uchun bo'sh qoldiring"
+            className="px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-white/10 text-white font-mono text-xs outline-none focus:border-primary-container"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-on-surface-variant font-mono">Yangi Maxfiy Parol:</label>
+          <input
+            type="password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Kamida 6 ta belgi..."
+            className="px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-white/10 text-white font-mono text-xs outline-none focus:border-primary-container"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-on-surface-variant font-mono">Yangi Parolni Tasdiqlang:</label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Parolni qayta kiriting..."
+            className="px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-white/10 text-white font-mono text-xs outline-none focus:border-primary-container"
+          />
+        </div>
+      </div>
+
+      <div className="pt-2 flex justify-end">
+        <button
+          type="submit"
+          disabled={changing}
+          className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[18px]">security</span>
+          <span>{changing ? 'Saqlanmoqda...' : 'Admin Parolini Yangilash'}</span>
+        </button>
+      </div>
+    </form>
   );
 }
