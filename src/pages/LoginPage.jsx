@@ -86,11 +86,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <span className="text-[11px] text-on-surface-variant font-mono">
             Standart login: <b>admin</b> | Parol: <b>admin123</b>
           </span>
-        </div>
+        </div> */}
       </div>
     </div>
   );
