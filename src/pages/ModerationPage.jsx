@@ -17,6 +17,11 @@ export default function ModerationPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Reject modal state
+  const [rejectItem, setRejectItem] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [processingId, setProcessingId] = useState(null);
+
   // Lock background scroll when image lightbox or reject modal is active
   useBodyScrollLock(!!selectedImage || !!rejectItem);
 
@@ -32,12 +37,6 @@ export default function ModerationPage() {
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage]);
-
-
-  // Reject modal state
-  const [rejectItem, setRejectItem] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [processingId, setProcessingId] = useState(null);
 
   const fetchSubmissions = async (targetPage = page, targetPageSize = pageSize) => {
     try {
