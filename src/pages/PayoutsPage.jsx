@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import Pagination from '../components/Pagination';
+import UserAuditModal from '../components/UserAuditModal';
 import { formatUZS } from '../utils/formatters';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
@@ -11,6 +12,7 @@ export default function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pending');
   const [selectedPayout, setSelectedPayout] = useState(null);
+  const [auditUserId, setAuditUserId] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   
   // Modal Inputs
@@ -19,7 +21,7 @@ export default function PayoutsPage() {
   const [refundBalance, setRefundBalance] = useState(true);
   const [banUser, setBanUser] = useState(false);
 
-  // Pagination
+  // Pagination 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
@@ -380,6 +382,32 @@ export default function PayoutsPage() {
                 </div>
               </div>
 
+              {/* Prominent Quick Audit Action Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-cyan-950/40 to-[#141724] border border-cyan-500/30 shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[20px]">history_edu</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-headline font-bold text-white">
+                      Foydalanuvchining To'liq Tarixi &amp; Auditi
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Bajarilgan vazifalar, isbotlar, referallar, ruletka va barcha kirim/chiqimlar
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAuditUserId(selectedPayout.user_id || selectedPayout.user_telegram_id || selectedPayout.user)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[17px]">manage_search</span>
+                  <span>To'liq Tarixni Ko'rish</span>
+                </button>
+              </div>
+
               {/* If Already Processed */}
               {selectedPayout.status !== 'pending' ? (
                 <div className={`p-5 rounded-2xl border flex flex-col gap-2 ${
@@ -552,6 +580,16 @@ export default function PayoutsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 3. USER AUDIT FULL HISTORY MODAL (LAYERED ON TOP) */}
+      {/* ==================================================================== */}
+      {auditUserId && (
+        <UserAuditModal
+          userId={auditUserId}
+          onClose={() => setAuditUserId(null)}
+        />
       )}
     </div>
   );

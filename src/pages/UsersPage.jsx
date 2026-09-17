@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import AmountInput from '../components/AmountInput';
 import Pagination from '../components/Pagination';
+import UserAuditModal from '../components/UserAuditModal';
 import { formatUZS } from '../utils/formatters';
 import getImageUrl from '../utils/imageUrl';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
@@ -16,6 +17,7 @@ export default function UsersPage() {
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [auditUserId, setAuditUserId] = useState(null);
 
   // Balance edit modal
   const [balanceModalUser, setBalanceModalUser] = useState(null);
@@ -206,6 +208,15 @@ export default function UsersPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
+                          onClick={() => setAuditUserId(u.id)}
+                          className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-semibold border border-cyan-500/30 flex items-center gap-1"
+                          title="To'liq audit tarixi"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">manage_search</span>
+                          <span>Tarix</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setBalanceModalUser(u);
                             setActionType('deposit');
@@ -333,6 +344,14 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* User Audit Full History Modal */}
+      {auditUserId && (
+        <UserAuditModal
+          userId={auditUserId}
+          onClose={() => setAuditUserId(null)}
+        />
       )}
     </div>
   );
